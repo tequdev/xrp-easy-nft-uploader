@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/nodejs:16
+FROM public.ecr.aws/lambda/nodejs:22
 WORKDIR  /var/task/
 
 COPY package.json package-lock.json ./
