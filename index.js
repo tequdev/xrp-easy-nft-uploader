@@ -1,8 +1,11 @@
 require('dotenv').config()
 const multipart = require('aws-lambda-multipart-parser');
-const { File, Web3Storage } = require('web3.storage')
 
-const client = new Web3Storage({ token: process.env.WEB3_STORAGE_TOKEN })
+const { PinataSDK } = require("pinata-web3");
+
+const pinata = new PinataSDK({
+  pinataJwt: process.env.PINATA_JWT,
+});
 
 const handler = async (event, context, callback) => {
   // リクエストボディに設定された画像データはBase64エンコードされているので、デコードする
@@ -10,15 +13,18 @@ const handler = async (event, context, callback) => {
     event.body = Buffer.from(event.body, 'base64').toString('binary');
     // parse multipart/form-data
     const multipartBuffer = await multipart.parse(event, true);
-    const metadataCid = await client.put([new File([multipartBuffer.file.content], 'file.text')], { wrapWithDirectory: false })
+    const file = new File([multipartBuffer.file.content], 'file.text')
+    const upload = await pinata.upload.file(file)
+    const cid = upload.IpfsHash
     return {
       statusCode: 200,
       headers: {
         "Access-Control-Allow-Origin": "*"
       },
-      body: JSON.stringify({ cid: metadataCid }),
+      body: JSON.stringify({ cid }),
     };
   } catch (e) {
+    console.error(e)
     return {
       statusCode: 500,
       headers: {
